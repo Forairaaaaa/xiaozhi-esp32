@@ -40,44 +40,9 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
     gpio_if_ = audio_codec_new_gpio();
     assert(gpio_if_ != NULL);
 
-    // es8311_codec_cfg_t es8311_cfg = {};
-    // es8311_cfg.ctrl_if = out_ctrl_if_;
-    // es8311_cfg.gpio_if = gpio_if_;
-    // es8311_cfg.codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC;
-    // es8311_cfg.pa_pin = pa_pin;
-    // es8311_cfg.use_mclk = true;
-    // es8311_cfg.hw_gain.pa_voltage = 5.0;
-    // es8311_cfg.hw_gain.codec_dac_voltage = 3.3;
-    // out_codec_if_ = es8311_codec_new(&es8311_cfg);
-    // assert(out_codec_if_ != NULL);
-
-    // while (1) {
-        uint8_t address;
-        printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n");
-        for (int i = 0; i < 128; i += 16) {
-            printf("%02x: ", i);
-            for (int j = 0; j < 16; j++) {
-                fflush(stdout);
-                address = i + j;
-                esp_err_t ret = i2c_master_probe((i2c_master_bus_handle_t)i2c_master_handle, address, pdMS_TO_TICKS(200));
-                if (ret == ESP_OK) {
-                    printf("%02x ", address);
-                } else if (ret == ESP_ERR_TIMEOUT) {
-                    printf("UU ");
-                } else {
-                    printf("-- ");
-                }
-            }
-            printf("\r\n");
-        }
-
-    //     vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-
     aw88298_codec_cfg_t aw88298_cfg = {};
     aw88298_cfg.ctrl_if = out_ctrl_if_;
     aw88298_cfg.gpio_if = gpio_if_;
-    // TODO reset
     aw88298_cfg.reset_pin = GPIO_NUM_NC;
     aw88298_cfg.hw_gain.pa_voltage = 5.0;
     aw88298_cfg.hw_gain.codec_dac_voltage = 3.3;

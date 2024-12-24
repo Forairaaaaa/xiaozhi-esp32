@@ -59,7 +59,9 @@ private:
         uint8_t w_buf[2];
         w_buf[0] = reg;
         w_buf[1] = data;
-        return i2c_master_transmit(i2c_dev, w_buf, 2, portMAX_DELAY);
+        auto ret = i2c_master_transmit(i2c_dev, w_buf, 2, portMAX_DELAY);
+        ESP_ERROR_CHECK(ret);
+        return ret;
     }
 
     uint8_t i2c_dev_read_reg_8(i2c_master_dev_handle_t i2c_dev, uint8_t reg) {
@@ -88,6 +90,10 @@ private:
         i2c_dev_write_reg_8(axp2101_handle_, 0x97, (0b11110 - 2));
         i2c_dev_write_reg_8(axp2101_handle_, 0x69, 0b00110101);
         i2c_dev_write_reg_8(axp2101_handle_, 0x30, 0b111111);
+
+        i2c_dev_write_reg_8(axp2101_handle_, 0x90, 0xBF);
+        i2c_dev_write_reg_8(axp2101_handle_, 0x94, 33 - 5);
+        i2c_dev_write_reg_8(axp2101_handle_, 0x95, 33 - 5);
     }
 
     i2c_master_dev_handle_t aw9523_handle_;
@@ -109,6 +115,8 @@ private:
         aw9523_config.scl_speed_hz = 400000;
         i2c_master_bus_add_device(i2c_bus_, &aw9523_config, &aw9523_handle_);
 
+        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);  // P0
+        // i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b10000011);  // P1
         i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);  // P0
         i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b10000011);  // P1
         i2c_dev_write_reg_8(aw9523_handle_, 0x04, 0b00011000);  // CONFIG_P0
