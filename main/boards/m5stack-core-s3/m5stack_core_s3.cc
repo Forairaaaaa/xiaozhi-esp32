@@ -15,7 +15,7 @@
 class M5StackCoreS3Board : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
-    // Button boot_button_;
+    Button boot_button_;
 
     void InitializeI2c() {
         // Initialize I2C peripheral
@@ -129,9 +129,9 @@ private:
     }
 
     void InitializeButtons() {
-        // boot_button_.OnClick([this]() {
-        //     Application::GetInstance().ToggleChatState();
-        // });
+        boot_button_.OnClick([this]() {
+            Application::GetInstance().ToggleChatState();
+        });
     }
 
     // 物联网初始化，添加对 AI 可见设备
@@ -141,8 +141,8 @@ private:
     }
 
 public:
-    // M5StackCoreS3Board() : boot_button_(BOOT_BUTTON_GPIO) {
-    M5StackCoreS3Board() {
+    M5StackCoreS3Board() : boot_button_(GPIO_NUM_1) {
+    // M5StackCoreS3Board() {
         InitializeI2c();
         InitializeAxp2101();
         InitializeAw9523();
