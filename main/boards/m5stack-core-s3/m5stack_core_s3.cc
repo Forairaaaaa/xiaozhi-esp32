@@ -10,6 +10,8 @@
 #include <esp_log.h>
 #include <driver/i2c_master.h>
 
+#include <cmath>
+
 #define TAG "M5StackCoreS3Board"
 
 class M5StackCoreS3Board : public WifiBoard {
@@ -101,8 +103,10 @@ private:
     void aw88298_reset() {
         ESP_LOGI(TAG, "Reset AW88298");
         i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000011);
+        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000001);
         vTaskDelay(pdMS_TO_TICKS(10));
         i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);
+        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000101);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
@@ -115,8 +119,8 @@ private:
         aw9523_config.scl_speed_hz = 400000;
         i2c_master_bus_add_device(i2c_bus_, &aw9523_config, &aw9523_handle_);
 
-        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);  // P0
-        // i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b10000011);  // P1
+        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000101);  // P0
+        // i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b00000011);  // P1
         i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);  // P0
         i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b10000011);  // P1
         i2c_dev_write_reg_8(aw9523_handle_, 0x04, 0b00011000);  // CONFIG_P0
@@ -156,6 +160,41 @@ public:
         return &led;
     }
 
+    void audio_output_test(CoreS3AudioCodec* audio_codec) {
+        printf("spk test shit\n");
+        audio_codec->EnableOutput(true);
+
+        const int SAMPLE_RATE = 24000; // 每秒采样数
+        const int DURATION_SECONDS = 4; // 音频播放时长（秒）
+        const int FREQUENCY = 440; // 生成的音频频率（Hz，A4音）
+        const double AMPLITUDE = 0.5; // 振幅（范围是0到1）
+
+        // 计算总采样数
+        int total_samples = SAMPLE_RATE * DURATION_SECONDS;
+
+        // 每个缓冲区的大小
+        const int BUFFER_SIZE = 1024;
+
+        // 临时缓冲区
+        int16_t buffer[BUFFER_SIZE];
+
+        // 生成正弦波音频数据
+        for (int i = 0; i < total_samples; i += BUFFER_SIZE) {
+            for (int j = 0; j < BUFFER_SIZE; ++j) {
+                // 当前采样点的时间
+                double time = static_cast<double>(i + j) / SAMPLE_RATE;
+
+                // 生成正弦波音频值
+                buffer[j] = static_cast<int16_t>(AMPLITUDE * 32767 * std::sin(2.0 * M_PI * FREQUENCY * time));
+            }
+
+            // 写入音频数据
+            audio_codec->TestWrite(buffer, BUFFER_SIZE);
+
+            vTaskDelay(pdMS_TO_TICKS(1000 * BUFFER_SIZE / SAMPLE_RATE));
+        }
+    }
+
     virtual AudioCodec* GetAudioCodec() override {
         static CoreS3AudioCodec* audio_codec = nullptr;
         if (audio_codec == nullptr) {
@@ -164,6 +203,7 @@ public:
                 AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK, AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN,
                 AUDIO_CODEC_AW88298_ADDR, AUDIO_CODEC_ES7210_ADDR, AUDIO_INPUT_REFERENCE);
             audio_codec->SetOutputVolume(AUDIO_DEFAULT_OUTPUT_VOLUME);
+            // audio_output_test(audio_codec);
         }
         return audio_codec;
     }
