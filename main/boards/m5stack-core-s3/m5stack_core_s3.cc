@@ -55,52 +55,69 @@ private:
         }
     }
 
-    i2c_master_dev_handle_t aw9523_hendle_;
-    esp_err_t aw9523_write_reg_8(uint8_t reg, uint8_t data) {
+    esp_err_t i2c_dev_write_reg_8(i2c_master_dev_handle_t i2c_dev, uint8_t reg, uint8_t data) {
         uint8_t w_buf[2];
         w_buf[0] = reg;
         w_buf[1] = data;
-        return i2c_master_transmit(aw9523_hendle_, w_buf, 2, portMAX_DELAY);
+        return i2c_master_transmit(i2c_dev, w_buf, 2, portMAX_DELAY);
+    }
+
+    uint8_t i2c_dev_read_reg_8(i2c_master_dev_handle_t i2c_dev, uint8_t reg) {
+        uint8_t w_buf[1];
+        uint8_t r_buf[1];
+        w_buf[0] = reg;
+        ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_dev, w_buf, 1, r_buf, 1, portMAX_DELAY));
+        return r_buf[0];
+    }
+    
+    i2c_master_dev_handle_t axp2101_handle_;
+
+    void InitializeAxp2101() {
+        ESP_LOGI(TAG, "Init AXP2101");
+
+        i2c_device_config_t axp2101_config = {};
+        axp2101_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+        axp2101_config.device_address = 0x34;
+        axp2101_config.scl_speed_hz = 400000;
+        i2c_master_bus_add_device(i2c_bus_, &axp2101_config, &axp2101_handle_);
+
+        uint8_t data = i2c_dev_read_reg_8(axp2101_handle_, 0x90);
+        data |= 0b10110100;
+        i2c_dev_write_reg_8(axp2101_handle_, 0x90, data);
+        i2c_dev_write_reg_8(axp2101_handle_, 0x99, (0b11110 - 5));
+        i2c_dev_write_reg_8(axp2101_handle_, 0x97, (0b11110 - 2));
+        i2c_dev_write_reg_8(axp2101_handle_, 0x69, 0b00110101);
+        i2c_dev_write_reg_8(axp2101_handle_, 0x30, 0b111111);
+    }
+
+    i2c_master_dev_handle_t aw9523_handle_;
+
+    void aw88298_reset() {
+        ESP_LOGI(TAG, "Reset AW88298");
+        i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000011);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 
     void InitializeAw9523() {
-        const uint8_t AW9523_REG_CONFIG0  = 0x04;
-        const uint8_t AW9523_REG_CONFIG1  = 0x05;
-        const uint8_t AW9523_REG_GCR      = 0x11;
-        const uint8_t AW9523_REG_LEDMODE0 = 0x12;
-        const uint8_t AW9523_REG_LEDMODE1 = 0x13;
-
+        ESP_LOGI(TAG, "Init AW9523");
 
         i2c_device_config_t aw9523_config = {};
         aw9523_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
         aw9523_config.device_address = 0x58;
         aw9523_config.scl_speed_hz = 400000;
-        i2c_master_bus_add_device(i2c_bus_, &aw9523_config, &aw9523_hendle_);
+        i2c_master_bus_add_device(i2c_bus_, &aw9523_config, &aw9523_handle_);
 
-        aw9523_write_reg_8(AW9523_REG_LEDMODE0, 0xFF);
-        aw9523_write_reg_8(AW9523_REG_LEDMODE1, 0xFF);
-        aw9523_write_reg_8(AW9523_REG_CONFIG0, 0b00011000);
-        aw9523_write_reg_8(AW9523_REG_CONFIG1, 0b00001100);
-        aw9523_write_reg_8(AW9523_REG_GCR, (1 << 4));
-        // P0
-        aw9523_write_reg_8(0x02, 0b00000111);
-        // P1
-        aw9523_write_reg_8(0x03, 0b10000011);
-        
-        // uint8_t w_buf[2];
-        // uint8_t r_buf[1];
-        // w_buf[0] = 0x02;
-        // i2c_master_transmit_receive(aw9523_hendle, w_buf, 1, r_buf, 1, portMAX_DELAY);
-        // printf("read get: %d\n", r_buf[0]);
+        i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);  // P0
+        i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b10000011);  // P1
+        i2c_dev_write_reg_8(aw9523_handle_, 0x04, 0b00011000);  // CONFIG_P0
+        i2c_dev_write_reg_8(aw9523_handle_, 0x05, 0b00001100);  // CONFIG_P1
+        i2c_dev_write_reg_8(aw9523_handle_, 0x11, 0b00010000);  // GCR P0 port is Push-Pull mode.
+        i2c_dev_write_reg_8(aw9523_handle_, 0x12, 0b11111111);  // LEDMODE_P0
+        i2c_dev_write_reg_8(aw9523_handle_, 0x13, 0b11111111);  // LEDMODE_P1
 
-        // w_buf[1] = r_buf[0] | 0b00000100;
-        // w_buf[0] = 0x02;
-        // i2c_master_transmit(aw9523_hendle, w_buf, 2, portMAX_DELAY);
-
-        while (1) {
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            I2cDetect();
-        }
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 
     void InitializeButtons() {
@@ -119,6 +136,7 @@ public:
     // M5StackCoreS3Board() : boot_button_(BOOT_BUTTON_GPIO) {
     M5StackCoreS3Board() {
         InitializeI2c();
+        InitializeAxp2101();
         InitializeAw9523();
         I2cDetect();
         InitializeButtons();
@@ -131,9 +149,9 @@ public:
     }
 
     virtual AudioCodec* GetAudioCodec() override {
-        // TODO
         static CoreS3AudioCodec* audio_codec = nullptr;
         if (audio_codec == nullptr) {
+            aw88298_reset();
             audio_codec = new CoreS3AudioCodec(i2c_bus_, AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE,
                 AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK, AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN,
                 AUDIO_CODEC_AW88298_ADDR, AUDIO_CODEC_ES7210_ADDR, AUDIO_INPUT_REFERENCE);
