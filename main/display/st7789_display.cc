@@ -302,6 +302,9 @@ void St7789Display::SetupUI() {
 
     chat_message_label_ = lv_label_create(content_);
     lv_label_set_text(chat_message_label_, "");
+    lv_obj_set_width(chat_message_label_, LV_HOR_RES * 0.8); // 限制宽度为屏幕宽度的 80%
+    lv_label_set_long_mode(chat_message_label_, LV_LABEL_LONG_WRAP); // 设置为自动换行模式
+    lv_obj_set_style_text_align(chat_message_label_, LV_TEXT_ALIGN_CENTER, 0); // 设置文本居中对齐
 
     /* Status bar */
     lv_obj_set_flex_flow(status_bar_, LV_FLEX_FLOW_ROW);
