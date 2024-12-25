@@ -292,10 +292,16 @@ void St7789Display::SetupUI() {
     lv_obj_set_width(content_, LV_HOR_RES);
     lv_obj_set_flex_grow(content_, 1);
 
+    lv_obj_set_flex_flow(content_, LV_FLEX_FLOW_COLUMN); // 垂直布局（从上到下）
+    lv_obj_set_flex_align(content_, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_EVENLY); // 子对象居中对齐，等距分布
+
     emotion_label_ = lv_label_create(content_);
     lv_obj_set_style_text_font(emotion_label_, &font_awesome_30_1, 0);
     lv_label_set_text(emotion_label_, FONT_AWESOME_AI_CHIP);
-    lv_obj_center(emotion_label_);
+    // lv_obj_center(emotion_label_);
+
+    chat_message_label_ = lv_label_create(content_);
+    lv_label_set_text(chat_message_label_, "");
 
     /* Status bar */
     lv_obj_set_flex_flow(status_bar_, LV_FLEX_FLOW_ROW);
@@ -325,4 +331,11 @@ void St7789Display::SetupUI() {
     battery_label_ = lv_label_create(status_bar_);
     lv_label_set_text(battery_label_, "");
     lv_obj_set_style_text_font(battery_label_, &font_awesome_14_1, 0);
+}
+
+void St7789Display::SetChatMessage(const std::string &role, const std::string &content) {
+    if (chat_message_label_ == nullptr) {
+        return;
+    }
+    lv_label_set_text(chat_message_label_, content.c_str());
 }
