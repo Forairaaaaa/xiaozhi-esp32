@@ -54,6 +54,14 @@ public:
         WriteReg(0x02, 0b00000111);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
+
+    void ResetIli9342() {
+        ESP_LOGI(TAG, "Reset IlI9342");
+        WriteReg(0x03, 0b10000001);
+        vTaskDelay(pdMS_TO_TICKS(20));
+        WriteReg(0x03, 0b10000011);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 };
 
 class M5StackCoreS3Board : public WifiBoard {
@@ -61,8 +69,6 @@ private:
     i2c_master_bus_handle_t i2c_bus_;
     Axp2101* axp2101_;
     Aw9523* aw9523_;
-    i2c_master_dev_handle_t aw9523_handle_;
-    i2c_master_dev_handle_t axp2101_handle_;
     Button boot_button_;
 
     void InitializeI2c() {
@@ -150,6 +156,7 @@ private:
         ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(panel_io, &panel_config, &panel));
         
         esp_lcd_panel_reset(panel);
+        aw9523_->ResetIli9342();
 
         esp_lcd_panel_init(panel);
         esp_lcd_panel_invert_color(panel, true);
