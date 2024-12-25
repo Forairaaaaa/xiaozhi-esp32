@@ -1,6 +1,6 @@
 #include "wifi_board.h"
 #include "audio_codecs/cores3_audio_codec.h"
-#include "display/no_display.h"
+#include "display/st7789_display.h"
 #include "application.h"
 #include "button.h"
 #include "led.h"
@@ -69,14 +69,15 @@ private:
     i2c_master_bus_handle_t i2c_bus_;
     Axp2101* axp2101_;
     Aw9523* aw9523_;
+    St7789Display* display_;
     Button boot_button_;
 
     void InitializeI2c() {
         // Initialize I2C peripheral
         i2c_master_bus_config_t i2c_bus_cfg = {
             .i2c_port = (i2c_port_t)1,
-            .sda_io_num = I2C_SDA_PIN,
-            .scl_io_num = I2C_SCL_PIN,
+            .sda_io_num = AUDIO_CODEC_I2C_SDA_PIN,
+            .scl_io_num = AUDIO_CODEC_I2C_SCL_PIN,
             .clk_source = I2C_CLK_SRC_DEFAULT,
             .glitch_ignore_cnt = 7,
             .intr_priority = 0,
@@ -160,8 +161,11 @@ private:
 
         esp_lcd_panel_init(panel);
         esp_lcd_panel_invert_color(panel, true);
-        // esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
-        // esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
+        esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
+        esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
+
+        display_ = new St7789Display(panel_io, panel, DISPLAY_BACKLIGHT_PIN, DISPLAY_BACKLIGHT_OUTPUT_INVERT,
+                                    DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
     }
 
     void InitializeButtons() {
@@ -207,8 +211,7 @@ public:
     }
 
     virtual Display* GetDisplay() override {
-        static NoDisplay display;
-        return &display;
+        return display_;
     }
 };
 
