@@ -58,6 +58,15 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
     output_dev_ = esp_codec_dev_new(&dev_cfg);
     assert(output_dev_ != NULL);
 
+    // EnableOutput(true);
+    // SetOutputVolume(10);
+    // while (1) {
+    //     ESP_LOGI(TAG, "Play beep");
+    //     PlayBeep(1000, 500);
+
+    //     vTaskDelay(pdMS_TO_TICKS(2000));
+    // }
+
     // Input
     i2c_cfg.addr = es7210_addr;
     in_ctrl_if_ = audio_codec_new_i2c_ctrl(&i2c_cfg);
@@ -65,6 +74,7 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
 
     es7210_codec_cfg_t es7210_cfg = {};
     es7210_cfg.ctrl_if = in_ctrl_if_;
+    // es7210_cfg.master_mode = true;
     // es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3 | ES7120_SEL_MIC4;
     es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3;
     in_codec_if_ = es7210_codec_new(&es7210_cfg);
@@ -94,6 +104,8 @@ CoreS3AudioCodec::~CoreS3AudioCodec() {
 
 void CoreS3AudioCodec::CreateDuplexChannels(gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din) {
     assert(input_sample_rate_ == output_sample_rate_);
+
+    ESP_LOGI(TAG, "Audio IOs: mclk: %d, bclk: %d, ws: %d, dout: %d, din: %d", mclk, bclk, ws, dout, din);
 
     i2s_chan_config_t chan_cfg = {
         .id = I2S_NUM_0,
@@ -248,4 +260,23 @@ int CoreS3AudioCodec::TestWrite(const int16_t* data, int samples) {
         ESP_ERROR_CHECK_WITHOUT_ABORT(esp_codec_dev_write(output_dev_, (void*)data, samples * sizeof(int16_t)));
     }
     return samples;
+}
+
+void CoreS3AudioCodec::PlayBeep(int frequency, int duration_ms) {
+    const int sample_rate = output_sample_rate_; // Use the output sample rate
+    const int samples = (sample_rate * duration_ms) / 1000; // Calculate number of samples
+    int16_t* buffer = new int16_t[samples]; // Allocate buffer for samples
+
+    // Generate a simple square wave beep
+    for (int i = 0; i < samples; ++i) {
+        buffer[i] = (i % (sample_rate / frequency) < (sample_rate / frequency) / 2) ? 32767 : -32768; // Square wave
+    }
+
+    // Write the buffer to the output device
+    ESP_ERROR_CHECK(esp_codec_dev_write(output_dev_, (void*)buffer, samples * sizeof(int16_t)));
+
+    // Wait for the duration of the beep to ensure synchronization
+    vTaskDelay(duration_ms / portTICK_PERIOD_MS); // Block for the duration of the beep
+
+    delete[] buffer; // Clean up
 }

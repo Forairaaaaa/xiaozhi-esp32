@@ -39,7 +39,8 @@ public:
         // WriteReg(0x02, 0b00000101);  // P0
         // WriteReg(0x03, 0b00000011);  // P1
         WriteReg(0x02, 0b00000111);  // P0
-        WriteReg(0x03, 0b10000011);  // P1
+        // WriteReg(0x03, 0b10000011);  // P1
+        WriteReg(0x03, 0b10001111);  // P1
         WriteReg(0x04, 0b00011000);  // CONFIG_P0
         WriteReg(0x05, 0b00001100);  // CONFIG_P1
         WriteReg(0x11, 0b00010000);  // GCR P0 port is Push-Pull mode.
@@ -270,7 +271,6 @@ public:
             audio_codec = new CoreS3AudioCodec(i2c_bus_, AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE,
                 AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK, AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN,
                 AUDIO_CODEC_AW88298_ADDR, AUDIO_CODEC_ES7210_ADDR, AUDIO_INPUT_REFERENCE);
-            audio_codec->SetOutputVolume(AUDIO_DEFAULT_OUTPUT_VOLUME);
         }
         return audio_codec;
     }
