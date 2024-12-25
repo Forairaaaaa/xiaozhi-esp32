@@ -5,6 +5,7 @@
 #include "button.h"
 #include "led.h"
 #include "config.h"
+#include "i2c_device.h"
 #include "iot/thing_manager.h"
 
 #include <esp_log.h>
@@ -15,9 +16,51 @@
 
 #define TAG "M5StackCoreS3Board"
 
+class Axp2101 : public I2cDevice {
+public:
+    Axp2101(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
+        uint8_t data = ReadReg(0x90);
+        data |= 0b10110100;
+        WriteReg(0x90, data);
+        WriteReg(0x99, (0b11110 - 5));
+        WriteReg(0x97, (0b11110 - 2));
+        WriteReg(0x69, 0b00110101);
+        WriteReg(0x30, 0b111111);
+
+        WriteReg(0x90, 0xBF);
+        WriteReg(0x94, 33 - 5);
+        WriteReg(0x95, 33 - 5);
+    }
+};
+
+class Aw9523 : public I2cDevice {
+public:
+    Aw9523(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
+        // WriteReg(0x02, 0b00000101);  // P0
+        // WriteReg(0x03, 0b00000011);  // P1
+        WriteReg(0x02, 0b00000111);  // P0
+        WriteReg(0x03, 0b10000011);  // P1
+        WriteReg(0x04, 0b00011000);  // CONFIG_P0
+        WriteReg(0x05, 0b00001100);  // CONFIG_P1
+        WriteReg(0x11, 0b00010000);  // GCR P0 port is Push-Pull mode.
+        WriteReg(0x12, 0b11111111);  // LEDMODE_P0
+        WriteReg(0x13, 0b11111111);  // LEDMODE_P1
+    }
+
+    void ResetAw88298() {
+        ESP_LOGI(TAG, "Reset AW88298");
+        WriteReg(0x02, 0b00000011);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        WriteReg(0x02, 0b00000111);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+};
+
 class M5StackCoreS3Board : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
+    Axp2101* axp2101_;
+    Aw9523* aw9523_;
     i2c_master_dev_handle_t aw9523_handle_;
     i2c_master_dev_handle_t axp2101_handle_;
     Button boot_button_;
@@ -60,74 +103,14 @@ private:
         }
     }
 
-    esp_err_t i2c_dev_write_reg_8(i2c_master_dev_handle_t i2c_dev, uint8_t reg, uint8_t data) {
-        uint8_t w_buf[2];
-        w_buf[0] = reg;
-        w_buf[1] = data;
-        auto ret = i2c_master_transmit(i2c_dev, w_buf, 2, portMAX_DELAY);
-        ESP_ERROR_CHECK(ret);
-        return ret;
-    }
-
-    uint8_t i2c_dev_read_reg_8(i2c_master_dev_handle_t i2c_dev, uint8_t reg) {
-        uint8_t w_buf[1];
-        uint8_t r_buf[1];
-        w_buf[0] = reg;
-        ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_dev, w_buf, 1, r_buf, 1, portMAX_DELAY));
-        return r_buf[0];
-    }
-
     void InitializeAxp2101() {
         ESP_LOGI(TAG, "Init AXP2101");
-
-        i2c_device_config_t axp2101_config = {};
-        axp2101_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
-        axp2101_config.device_address = 0x34;
-        axp2101_config.scl_speed_hz = 400000;
-        i2c_master_bus_add_device(i2c_bus_, &axp2101_config, &axp2101_handle_);
-
-        uint8_t data = i2c_dev_read_reg_8(axp2101_handle_, 0x90);
-        data |= 0b10110100;
-        i2c_dev_write_reg_8(axp2101_handle_, 0x90, data);
-        i2c_dev_write_reg_8(axp2101_handle_, 0x99, (0b11110 - 5));
-        i2c_dev_write_reg_8(axp2101_handle_, 0x97, (0b11110 - 2));
-        i2c_dev_write_reg_8(axp2101_handle_, 0x69, 0b00110101);
-        i2c_dev_write_reg_8(axp2101_handle_, 0x30, 0b111111);
-
-        i2c_dev_write_reg_8(axp2101_handle_, 0x90, 0xBF);
-        i2c_dev_write_reg_8(axp2101_handle_, 0x94, 33 - 5);
-        i2c_dev_write_reg_8(axp2101_handle_, 0x95, 33 - 5);
-    }
-
-    void aw88298_reset() {
-        ESP_LOGI(TAG, "Reset AW88298");
-        i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000011);
-        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000001);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);
-        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000101);
-        vTaskDelay(pdMS_TO_TICKS(50));
+        axp2101_ = new Axp2101(i2c_bus_, 0x34);
     }
 
     void InitializeAw9523() {
         ESP_LOGI(TAG, "Init AW9523");
-
-        i2c_device_config_t aw9523_config = {};
-        aw9523_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
-        aw9523_config.device_address = 0x58;
-        aw9523_config.scl_speed_hz = 400000;
-        i2c_master_bus_add_device(i2c_bus_, &aw9523_config, &aw9523_handle_);
-
-        // i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000101);  // P0
-        // i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b00000011);  // P1
-        i2c_dev_write_reg_8(aw9523_handle_, 0x02, 0b00000111);  // P0
-        i2c_dev_write_reg_8(aw9523_handle_, 0x03, 0b10000011);  // P1
-        i2c_dev_write_reg_8(aw9523_handle_, 0x04, 0b00011000);  // CONFIG_P0
-        i2c_dev_write_reg_8(aw9523_handle_, 0x05, 0b00001100);  // CONFIG_P1
-        i2c_dev_write_reg_8(aw9523_handle_, 0x11, 0b00010000);  // GCR P0 port is Push-Pull mode.
-        i2c_dev_write_reg_8(aw9523_handle_, 0x12, 0b11111111);  // LEDMODE_P0
-        i2c_dev_write_reg_8(aw9523_handle_, 0x13, 0b11111111);  // LEDMODE_P1
-
+        aw9523_ = new Aw9523(i2c_bus_, 0x58);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
@@ -207,7 +190,7 @@ public:
     virtual AudioCodec* GetAudioCodec() override {
         static CoreS3AudioCodec* audio_codec = nullptr;
         if (audio_codec == nullptr) {
-            aw88298_reset();
+            aw9523_->ResetAw88298();
             audio_codec = new CoreS3AudioCodec(i2c_bus_, AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE,
                 AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK, AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN,
                 AUDIO_CODEC_AW88298_ADDR, AUDIO_CODEC_ES7210_ADDR, AUDIO_INPUT_REFERENCE);
