@@ -82,11 +82,14 @@ public:
         delete[] read_buffer_;
     }
 
-    const TouchPoint_t ReadTouchPoint() {
+    void UpdateTouchPoint() {
         ReadRegs(0x02, read_buffer_, 6);
         tp_.num = read_buffer_[0] & 0x0F;
         tp_.x = ((read_buffer_[1] & 0x0F) << 8) | read_buffer_[2];
         tp_.y = ((read_buffer_[3] & 0x0F) << 8) | read_buffer_[4];
+    }
+
+    const TouchPoint_t& GetTouchPoint() {
         return tp_;
     }
 
@@ -153,18 +156,33 @@ private:
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
-    void InitializeFt6336() {
+    static void touchpad_daemon(void* param) {
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        auto& board = (M5StackCoreS3Board&)Board::GetInstance();
+        auto touchpad = board.GetTouchpad();
+        bool was_touched = false;
+        while (1) {
+            touchpad->UpdateTouchPoint();
+            if (touchpad->GetTouchPoint().num > 0) {
+                // On press
+                if (!was_touched) {
+                    was_touched = true;
+                    Application::GetInstance().ToggleChatState();
+                }
+            }
+            // On release
+            else if (was_touched) {
+                was_touched = false;
+            }
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        vTaskDelete(NULL);
+    }
+
+    void InitializeFt6336TouchPad() {
         ESP_LOGI(TAG, "Init FT6336");
         ft6336_ = new Ft6336(i2c_bus_, 0x38);
-
-        // Test loop
-        while (true) {
-            Ft6336::TouchPoint_t point = ft6336_->ReadTouchPoint();
-            if (point.num > 0) {
-                ESP_LOGI(TAG, "Touch point: %d, x: %d, y: %d", point.num, point.x, point.y);
-            }
-            vTaskDelay(pdMS_TO_TICKS(100));
-        }
+        xTaskCreate(touchpad_daemon, "tp", 2048, NULL, 5, NULL);
     }
 
     void InitializeSpi() {
@@ -232,7 +250,7 @@ public:
         InitializeI2c();
         InitializeAxp2101();
         InitializeAw9523();
-        InitializeFt6336();
+        InitializeFt6336TouchPad();
         I2cDetect();
         InitializeSpi();
         InitializeIli9342Display();
@@ -259,6 +277,10 @@ public:
 
     virtual Display* GetDisplay() override {
         return display_;
+    }
+
+    Ft6336* GetTouchpad() {
+        return ft6336_;
     }
 };
 
