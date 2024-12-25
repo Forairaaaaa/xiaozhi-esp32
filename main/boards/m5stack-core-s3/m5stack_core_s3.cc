@@ -64,11 +64,43 @@ public:
     }
 };
 
+class Ft6336 : public I2cDevice {
+public:
+    struct TouchPoint_t {
+        int num = 0;
+        int x = -1;
+        int y = -1;
+    };
+    
+    Ft6336(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
+        uint8_t chip_id = ReadReg(0xA3);
+        ESP_LOGI(TAG, "Get chip ID: 0x%02X", chip_id);
+        read_buffer_ = new uint8_t[6];
+    }
+
+    ~Ft6336() {
+        delete[] read_buffer_;
+    }
+
+    const TouchPoint_t ReadTouchPoint() {
+        ReadRegs(0x02, read_buffer_, 6);
+        tp_.num = read_buffer_[0] & 0x0F;
+        tp_.x = ((read_buffer_[1] & 0x0F) << 8) | read_buffer_[2];
+        tp_.y = ((read_buffer_[3] & 0x0F) << 8) | read_buffer_[4];
+        return tp_;
+    }
+
+private:
+    uint8_t* read_buffer_ = nullptr;
+    TouchPoint_t tp_;
+};
+
 class M5StackCoreS3Board : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
     Axp2101* axp2101_;
     Aw9523* aw9523_;
+    Ft6336* ft6336_;
     St7789Display* display_;
     Button boot_button_;
 
@@ -119,6 +151,20 @@ private:
         ESP_LOGI(TAG, "Init AW9523");
         aw9523_ = new Aw9523(i2c_bus_, 0x58);
         vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    void InitializeFt6336() {
+        ESP_LOGI(TAG, "Init FT6336");
+        ft6336_ = new Ft6336(i2c_bus_, 0x38);
+
+        // Test loop
+        while (true) {
+            Ft6336::TouchPoint_t point = ft6336_->ReadTouchPoint();
+            if (point.num > 0) {
+                ESP_LOGI(TAG, "Touch point: %d, x: %d, y: %d", point.num, point.x, point.y);
+            }
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
     }
 
     void InitializeSpi() {
@@ -186,6 +232,7 @@ public:
         InitializeI2c();
         InitializeAxp2101();
         InitializeAw9523();
+        InitializeFt6336();
         I2cDetect();
         InitializeSpi();
         InitializeIli9342Display();
