@@ -9,14 +9,17 @@
 
 #include <esp_log.h>
 #include <driver/i2c_master.h>
-
-#include <cmath>
+#include <esp_lcd_panel_io.h>
+#include <esp_lcd_panel_ops.h>
+#include "esp_lcd_ili9341.h"
 
 #define TAG "M5StackCoreS3Board"
 
 class M5StackCoreS3Board : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
+    i2c_master_dev_handle_t aw9523_handle_;
+    i2c_master_dev_handle_t axp2101_handle_;
     Button boot_button_;
 
     void InitializeI2c() {
@@ -73,8 +76,6 @@ private:
         ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_dev, w_buf, 1, r_buf, 1, portMAX_DELAY));
         return r_buf[0];
     }
-    
-    i2c_master_dev_handle_t axp2101_handle_;
 
     void InitializeAxp2101() {
         ESP_LOGI(TAG, "Init AXP2101");
@@ -97,8 +98,6 @@ private:
         i2c_dev_write_reg_8(axp2101_handle_, 0x94, 33 - 5);
         i2c_dev_write_reg_8(axp2101_handle_, 0x95, 33 - 5);
     }
-
-    i2c_master_dev_handle_t aw9523_handle_;
 
     void aw88298_reset() {
         ESP_LOGI(TAG, "Reset AW88298");
@@ -132,6 +131,49 @@ private:
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    void InitializeSpi() {
+        spi_bus_config_t buscfg = {};
+        buscfg.mosi_io_num = GPIO_NUM_37;
+        buscfg.miso_io_num = GPIO_NUM_NC;
+        buscfg.sclk_io_num = GPIO_NUM_36;
+        buscfg.quadwp_io_num = GPIO_NUM_NC;
+        buscfg.quadhd_io_num = GPIO_NUM_NC;
+        buscfg.max_transfer_sz = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(uint16_t);
+        ESP_ERROR_CHECK(spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    }
+
+    void InitializeIli9342Display() {
+        ESP_LOGI(TAG, "Init IlI9342");
+
+        esp_lcd_panel_io_handle_t panel_io = nullptr;
+        esp_lcd_panel_handle_t panel = nullptr;
+
+        ESP_LOGD(TAG, "Install panel IO");
+        esp_lcd_panel_io_spi_config_t io_config = {};
+        io_config.cs_gpio_num = GPIO_NUM_3;
+        io_config.dc_gpio_num = GPIO_NUM_35;
+        io_config.spi_mode = 2;
+        io_config.pclk_hz = 40 * 1000 * 1000;
+        io_config.trans_queue_depth = 10;
+        io_config.lcd_cmd_bits = 8;
+        io_config.lcd_param_bits = 8;
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(SPI3_HOST, &io_config, &panel_io));
+
+        ESP_LOGD(TAG, "Install LCD driver");
+        esp_lcd_panel_dev_config_t panel_config = {};
+        panel_config.reset_gpio_num = GPIO_NUM_NC;
+        panel_config.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB;
+        panel_config.bits_per_pixel = 16;
+        ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(panel_io, &panel_config, &panel));
+        
+        esp_lcd_panel_reset(panel);
+
+        esp_lcd_panel_init(panel);
+        esp_lcd_panel_invert_color(panel, true);
+        // esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
+        // esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
+    }
+
     void InitializeButtons() {
         boot_button_.OnClick([this]() {
             Application::GetInstance().ToggleChatState();
@@ -151,6 +193,8 @@ public:
         InitializeAxp2101();
         InitializeAw9523();
         I2cDetect();
+        InitializeSpi();
+        InitializeIli9342Display();
         InitializeButtons();
         InitializeIot();
     }
@@ -158,41 +202,6 @@ public:
     virtual Led* GetBuiltinLed() override {
         static Led led(GPIO_NUM_NC);
         return &led;
-    }
-
-    void audio_output_test(CoreS3AudioCodec* audio_codec) {
-        printf("spk test shit\n");
-        audio_codec->EnableOutput(true);
-
-        const int SAMPLE_RATE = 24000; // 每秒采样数
-        const int DURATION_SECONDS = 4; // 音频播放时长（秒）
-        const int FREQUENCY = 440; // 生成的音频频率（Hz，A4音）
-        const double AMPLITUDE = 0.5; // 振幅（范围是0到1）
-
-        // 计算总采样数
-        int total_samples = SAMPLE_RATE * DURATION_SECONDS;
-
-        // 每个缓冲区的大小
-        const int BUFFER_SIZE = 1024;
-
-        // 临时缓冲区
-        int16_t buffer[BUFFER_SIZE];
-
-        // 生成正弦波音频数据
-        for (int i = 0; i < total_samples; i += BUFFER_SIZE) {
-            for (int j = 0; j < BUFFER_SIZE; ++j) {
-                // 当前采样点的时间
-                double time = static_cast<double>(i + j) / SAMPLE_RATE;
-
-                // 生成正弦波音频值
-                buffer[j] = static_cast<int16_t>(AMPLITUDE * 32767 * std::sin(2.0 * M_PI * FREQUENCY * time));
-            }
-
-            // 写入音频数据
-            audio_codec->TestWrite(buffer, BUFFER_SIZE);
-
-            vTaskDelay(pdMS_TO_TICKS(1000 * BUFFER_SIZE / SAMPLE_RATE));
-        }
     }
 
     virtual AudioCodec* GetAudioCodec() override {
@@ -203,7 +212,6 @@ public:
                 AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK, AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN,
                 AUDIO_CODEC_AW88298_ADDR, AUDIO_CODEC_ES7210_ADDR, AUDIO_INPUT_REFERENCE);
             audio_codec->SetOutputVolume(AUDIO_DEFAULT_OUTPUT_VOLUME);
-            // audio_output_test(audio_codec);
         }
         return audio_codec;
     }
