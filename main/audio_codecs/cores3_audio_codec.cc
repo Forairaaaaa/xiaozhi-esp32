@@ -243,30 +243,3 @@ int CoreS3AudioCodec::Write(const int16_t* data, int samples) {
     }
     return samples;
 }
-
-int CoreS3AudioCodec::TestWrite(const int16_t* data, int samples) {
-    if (output_enabled_) {
-        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_codec_dev_write(output_dev_, (void*)data, samples * sizeof(int16_t)));
-    }
-    return samples;
-}
-
-void CoreS3AudioCodec::PlayBeep(int frequency, int duration_ms) {
-    printf(">>>> beep %d\n", frequency);
-    const int sample_rate = output_sample_rate_; // Use the output sample rate
-    const int samples = (sample_rate * duration_ms) / 1000; // Calculate number of samples
-    int16_t* buffer = new int16_t[samples]; // Allocate buffer for samples
-
-    // Generate a simple square wave beep
-    for (int i = 0; i < samples; ++i) {
-        buffer[i] = (i % (sample_rate / frequency) < (sample_rate / frequency) / 2) ? 32767 : -32768; // Square wave
-    }
-
-    // Write the buffer to the output device
-    ESP_ERROR_CHECK(esp_codec_dev_write(output_dev_, (void*)buffer, samples * sizeof(int16_t)));
-
-    // Wait for the duration of the beep to ensure synchronization
-    vTaskDelay(duration_ms / portTICK_PERIOD_MS); // Block for the duration of the beep
-
-    delete[] buffer; // Clean up
-}
