@@ -11,7 +11,7 @@ static const char TAG[] = "CoreS3AudioCodec";
 CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rate, int output_sample_rate,
     gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din,
     uint8_t aw88298_addr, uint8_t es7210_addr, bool input_reference) {
-    duplex_ = true; // 是否双工
+    duplex_ = false; // 是否双工
     input_reference_ = input_reference; // 是否使用参考输入，实现回声消除
     input_channels_ = input_reference_ ? 2 : 1; // 输入通道数
     input_sample_rate_ = input_sample_rate;
@@ -62,7 +62,7 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
     // SetOutputVolume(10);
     // while (1) {
     //     ESP_LOGI(TAG, "Play beep");
-    //     PlayBeep(1000, 500);
+    //     PlayBeep(1000, 80);
 
     //     vTaskDelay(pdMS_TO_TICKS(2000));
     // }
@@ -76,7 +76,8 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
     es7210_cfg.ctrl_if = in_ctrl_if_;
     // es7210_cfg.master_mode = true;
     // es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3 | ES7120_SEL_MIC4;
-    es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3;
+    // es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3;
+    es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2;
     in_codec_if_ = es7210_codec_new(&es7210_cfg);
     assert(in_codec_if_ != NULL);
 
@@ -84,6 +85,16 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
     dev_cfg.codec_if = in_codec_if_;
     input_dev_ = esp_codec_dev_new(&dev_cfg);
     assert(input_dev_ != NULL);
+
+    // EnableInput(true);
+    // EnableOutput(true);
+    // SetOutputVolume(10);
+    // while (1) {
+    //     ESP_LOGI(TAG, "Play beep");
+    //     PlayBeep(1000, 80);
+
+    //     vTaskDelay(pdMS_TO_TICKS(2000));
+    // }
 
     ESP_LOGI(TAG, "CoreS3AudioCodec initialized");
 }
@@ -204,7 +215,7 @@ void CoreS3AudioCodec::EnableInput(bool enable) {
     if (enable) {
         esp_codec_dev_sample_info_t fs = {
             .bits_per_sample = 16,
-            .channel = 4,
+            .channel = 2,
             .channel_mask = ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0),
             .sample_rate = (uint32_t)output_sample_rate_,
             .mclk_multiple = 0,
@@ -249,7 +260,17 @@ int CoreS3AudioCodec::Read(int16_t* dest, int samples) {
 }
 
 int CoreS3AudioCodec::Write(const int16_t* data, int samples) {
+    // EnableOutput(true);
+    // printf(">>>> w1 %d %d\n", samples, output_volume_);
     if (output_enabled_) {
+        // printf(">>>> w2 %d\n", samples);
+        // if (samples > 10) {
+        //     for (int i = 0 ;i < 10; i++) {
+        //         printf("%d ", data[i]);
+        //     }
+        //     printf("\n");
+        // }
+        // PlayBeep(1000, 50);
         ESP_ERROR_CHECK_WITHOUT_ABORT(esp_codec_dev_write(output_dev_, (void*)data, samples * sizeof(int16_t)));
     }
     return samples;
@@ -263,6 +284,7 @@ int CoreS3AudioCodec::TestWrite(const int16_t* data, int samples) {
 }
 
 void CoreS3AudioCodec::PlayBeep(int frequency, int duration_ms) {
+    printf(">>>> beep %d\n", frequency);
     const int sample_rate = output_sample_rate_; // Use the output sample rate
     const int samples = (sample_rate * duration_ms) / 1000; // Calculate number of samples
     int16_t* buffer = new int16_t[samples]; // Allocate buffer for samples
