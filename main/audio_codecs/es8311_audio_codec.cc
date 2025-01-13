@@ -41,7 +41,8 @@ Es8311AudioCodec::Es8311AudioCodec(void* i2c_master_handle, i2c_port_t i2c_port,
     es8311_cfg.gpio_if = gpio_if_;
     es8311_cfg.codec_mode = ESP_CODEC_DEV_WORK_MODE_BOTH;
     es8311_cfg.pa_pin = pa_pin;
-    es8311_cfg.use_mclk = true;
+    // es8311_cfg.use_mclk = true;
+    es8311_cfg.use_mclk = false;
     es8311_cfg.hw_gain.pa_voltage = 5.0;
     es8311_cfg.hw_gain.codec_dac_voltage = 3.3;
     codec_if_ = es8311_codec_new(&es8311_cfg);
@@ -57,6 +58,10 @@ Es8311AudioCodec::Es8311AudioCodec(void* i2c_master_handle, i2c_port_t i2c_port,
     dev_cfg.dev_type = ESP_CODEC_DEV_TYPE_IN;
     input_dev_ = esp_codec_dev_new(&dev_cfg);
     assert(input_dev_ != NULL);
+
+    // EnableOutput(true);
+    // // SetOutputVolume(10);
+    // PlayBeep(1000, 100);
 
     ESP_LOGI(TAG, "Es8311AudioCodec initialized");
 }
@@ -75,6 +80,8 @@ Es8311AudioCodec::~Es8311AudioCodec() {
 
 void Es8311AudioCodec::CreateDuplexChannels(gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din) {
     assert(input_sample_rate_ == output_sample_rate_);
+
+    printf("mclk: %d\nbclk: %d\nws: %d\ndout: %d\ndin: %d\n", mclk, bclk, ws, dout, din);
 
     i2s_chan_config_t chan_cfg = {
         .id = I2S_NUM_0,
@@ -180,7 +187,29 @@ int Es8311AudioCodec::Read(int16_t* dest, int samples) {
 
 int Es8311AudioCodec::Write(const int16_t* data, int samples) {
     if (output_enabled_) {
+        // printf("www\n");
+        // PlayBeep(1000, 50);
         ESP_ERROR_CHECK_WITHOUT_ABORT(esp_codec_dev_write(output_dev_, (void*)data, samples * sizeof(int16_t)));
     }
     return samples;
+}
+
+void Es8311AudioCodec::PlayBeep(int frequency, int duration_ms) {
+    printf(">>>> beep %d\n", frequency);
+    const int sample_rate = output_sample_rate_; // Use the output sample rate
+    const int samples = (sample_rate * duration_ms) / 1000; // Calculate number of samples
+    int16_t* buffer = new int16_t[samples]; // Allocate buffer for samples
+
+    // Generate a simple square wave beep
+    for (int i = 0; i < samples; ++i) {
+        buffer[i] = (i % (sample_rate / frequency) < (sample_rate / frequency) / 2) ? 32767 : -32768; // Square wave
+    }
+
+    // Write the buffer to the output device
+    ESP_ERROR_CHECK(esp_codec_dev_write(output_dev_, (void*)buffer, samples * sizeof(int16_t)));
+
+    // Wait for the duration of the beep to ensure synchronization
+    vTaskDelay(duration_ms / portTICK_PERIOD_MS); // Block for the duration of the beep
+
+    delete[] buffer; // Clean up
 }

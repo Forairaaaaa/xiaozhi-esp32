@@ -85,7 +85,7 @@ private:
 
     void InitializePi4ioe() {
         ESP_LOGI(TAG, "Init PI4IOE");
-        pi4ioe_ = new Pi4ioe(i2c_bus_, 0x43);
+        pi4ioe_ = new Pi4ioe(i2c_bus_, PI4IOE_ADDR);
         pi4ioe_->SetSpeakerMute(false);
     }
 
@@ -133,6 +133,7 @@ public:
             audio_codec = new Es8311AudioCodec(i2c_bus_, I2C_NUM_1, AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE,
                 AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK, AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN,
                 AUDIO_CODEC_GPIO_PA, AUDIO_CODEC_ES8311_ADDR);
+            audio_codec->SetOutputVolume(80);
         }
         return audio_codec;
     }
