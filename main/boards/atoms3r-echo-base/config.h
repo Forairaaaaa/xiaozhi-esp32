@@ -1,7 +1,7 @@
 #ifndef _BOARD_CONFIG_H_
 #define _BOARD_CONFIG_H_
 
-// M5Stack CoreS3 Board configuration
+// AtomS3R+EchoBase Board configuration
 
 #include <driver/gpio.h>
 
