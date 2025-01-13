@@ -162,35 +162,6 @@ private:
         ESP_ERROR_CHECK(spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO));
     }
 
-    void draw_white_screen(esp_lcd_panel_handle_t panel, int width, int height)
-    {
-        // Allocate memory for a white screen (assuming 16-bit color depth, RGB565 format)
-        size_t buffer_size = width * height * sizeof(uint16_t);
-        uint16_t *white_screen = (uint16_t *)malloc(buffer_size);
-
-        if (white_screen == NULL)
-        {
-            printf("Failed to allocate memory for white screen!\n");
-            return;
-        }
-
-        // Fill the buffer with white color (RGB565: 0xFFFF)
-        for (int i = 0; i < width * height; ++i)
-        {
-            white_screen[i] = 0xFFFF; // RGB565 for white
-        }
-
-        // Draw the bitmap onto the LCD
-        esp_err_t ret = esp_lcd_panel_draw_bitmap(panel, 0, 0, width, height, white_screen);
-        if (ret != ESP_OK)
-        {
-            printf("Failed to draw white screen: %s\n", esp_err_to_name(ret));
-        }
-
-        // Free the allocated memory
-        free(white_screen);
-    }
-
     void InitializeGc9107Display() {
         ESP_LOGI(TAG, "Init GC9107 display");
 
