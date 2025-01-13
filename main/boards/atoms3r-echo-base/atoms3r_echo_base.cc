@@ -26,7 +26,6 @@
 
 class Pi4ioe : public I2cDevice {
 public:
-    // Power Init
     Pi4ioe(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
         WriteReg(PI4IOE_REG_IO_PP, 0x00); // Set to high-impedance
         WriteReg(PI4IOE_REG_IO_PULLUP, 0xFF); // Enable pull-up
@@ -41,7 +40,6 @@ public:
 
 class Lp5562 : public I2cDevice {
 public:
-    // Power Init
     Lp5562(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
         WriteReg(0x00, 0B01000000); // Set chip_en to 1
         WriteReg(0x08, 0B00000001); // Enable internal clock
