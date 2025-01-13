@@ -58,6 +58,35 @@ public:
     }
 };
 
+static const gc9a01_lcd_init_cmd_t gc9107_lcd_init_cmds[] = {
+    //  {cmd, { data }, data_size, delay_ms}
+    {0xfe, (uint8_t[]){0x00}, 0, 0},
+    {0xef, (uint8_t[]){0x00}, 0, 0},
+    {0xb0, (uint8_t[]){0xc0}, 1, 0},
+    {0xb2, (uint8_t[]){0x2f}, 1, 0},
+    {0xb3, (uint8_t[]){0x03}, 1, 0},
+    {0xb6, (uint8_t[]){0x19}, 1, 0},
+    {0xb7, (uint8_t[]){0x01}, 1, 0},
+    {0xac, (uint8_t[]){0xcb}, 1, 0},
+    {0xab, (uint8_t[]){0x0e}, 1, 0},
+    {0xb4, (uint8_t[]){0x04}, 1, 0},
+    {0xa8, (uint8_t[]){0x19}, 1, 0},
+    {0xb8, (uint8_t[]){0x08}, 1, 0},
+    {0xe8, (uint8_t[]){0x24}, 1, 0},
+    {0xe9, (uint8_t[]){0x48}, 1, 0},
+    {0xea, (uint8_t[]){0x22}, 1, 0},
+    {0xc6, (uint8_t[]){0x30}, 1, 0},
+    {0xc7, (uint8_t[]){0x18}, 1, 0},
+    {0xf0,
+    (uint8_t[]){0x1f, 0x28, 0x04, 0x3e, 0x2a, 0x2e, 0x20, 0x00, 0x0c, 0x06,
+                0x00, 0x1c, 0x1f, 0x0f},
+    14, 0},
+    {0xf1,
+    (uint8_t[]){0x00, 0x2d, 0x2f, 0x3c, 0x6f, 0x1c, 0x0b, 0x00, 0x00, 0x00,
+                0x07, 0x0d, 0x11, 0x0f},
+    14, 0},
+};
+
 class AtomS3rEchoBaseBoard : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
@@ -122,6 +151,7 @@ private:
     }
 
     void InitializeSpi() {
+        ESP_LOGI(TAG, "Initialize SPI bus");
         spi_bus_config_t buscfg = {};
         buscfg.mosi_io_num = GPIO_NUM_21;
         buscfg.miso_io_num = GPIO_NUM_NC;
@@ -132,9 +162,69 @@ private:
         ESP_ERROR_CHECK(spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO));
     }
 
+    void draw_white_screen(esp_lcd_panel_handle_t panel, int width, int height)
+    {
+        // Allocate memory for a white screen (assuming 16-bit color depth, RGB565 format)
+        size_t buffer_size = width * height * sizeof(uint16_t);
+        uint16_t *white_screen = (uint16_t *)malloc(buffer_size);
+
+        if (white_screen == NULL)
+        {
+            printf("Failed to allocate memory for white screen!\n");
+            return;
+        }
+
+        // Fill the buffer with white color (RGB565: 0xFFFF)
+        for (int i = 0; i < width * height; ++i)
+        {
+            white_screen[i] = 0xFFFF; // RGB565 for white
+        }
+
+        // Draw the bitmap onto the LCD
+        esp_err_t ret = esp_lcd_panel_draw_bitmap(panel, 0, 0, width, height, white_screen);
+        if (ret != ESP_OK)
+        {
+            printf("Failed to draw white screen: %s\n", esp_err_to_name(ret));
+        }
+
+        // Free the allocated memory
+        free(white_screen);
+    }
+
     void InitializeGc9107Display() {
         ESP_LOGI(TAG, "Init GC9107 display");
-        display_ = new NoDisplay();
+
+        ESP_LOGI(TAG, "Install panel IO");
+        esp_lcd_panel_io_handle_t io_handle = NULL;
+        esp_lcd_panel_io_spi_config_t io_config = {};
+        io_config.cs_gpio_num = GPIO_NUM_14;
+        io_config.dc_gpio_num = GPIO_NUM_42;
+        io_config.spi_mode = 0;
+        io_config.pclk_hz = 40 * 1000 * 1000;
+        io_config.trans_queue_depth = 10;
+        io_config.lcd_cmd_bits = 8;
+        io_config.lcd_param_bits = 8;
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(SPI3_HOST, &io_config, &io_handle));
+    
+        ESP_LOGI(TAG, "Install GC9A01 panel driver");
+        esp_lcd_panel_handle_t panel_handle = NULL;
+        gc9a01_vendor_config_t gc9107_vendor_config = {
+            .init_cmds = gc9107_lcd_init_cmds,
+            .init_cmds_size = sizeof(gc9107_lcd_init_cmds) / sizeof(gc9a01_lcd_init_cmd_t),
+        };
+        esp_lcd_panel_dev_config_t panel_config = {};
+        panel_config.reset_gpio_num = GPIO_NUM_48; // Set to -1 if not use
+        panel_config.rgb_endian = LCD_RGB_ENDIAN_RGB;
+        panel_config.bits_per_pixel = 16; // Implemented by LCD command `3Ah` (16/18)
+        panel_config.vendor_config = &gc9107_vendor_config;
+
+        ESP_ERROR_CHECK(esp_lcd_new_panel_gc9a01(io_handle, &panel_config, &panel_handle));
+        ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
+        ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
+        ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true)); 
+
+        display_ = new LcdDisplay(io_handle, panel_handle, DISPLAY_BACKLIGHT_PIN, DISPLAY_BACKLIGHT_OUTPUT_INVERT,
+                                    DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
     }
 
     void InitializeButtons() {
@@ -176,7 +266,6 @@ public:
     }
 
     virtual Display* GetDisplay() override {
-        // return display_;
         return display_;
     }
 };
