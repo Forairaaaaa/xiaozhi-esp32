@@ -13,7 +13,7 @@
 #include <wifi_station.h>
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
-#include "esp_lcd_ili9341.h"
+#include <esp_lcd_gc9a01.h>
 
 #define TAG "AtomS3R+EchoBase"
 
@@ -39,10 +39,31 @@ public:
     }
 };
 
+class Lp5562 : public I2cDevice {
+public:
+    // Power Init
+    Lp5562(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
+        WriteReg(0x00, 0B01000000); // Set chip_en to 1
+        WriteReg(0x08, 0B00000001); // Enable internal clock
+        WriteReg(0x70, 0B00000000); // Configure all LED outputs to be controlled from I2C registers
+
+        // PWM clock frequency 558 Hz
+        auto data = ReadReg(0x08);
+        data = data | 0B01000000;
+        WriteReg(0x08, data);
+    }
+
+    void SetLcdBacklight(uint8_t brightness) {
+        WriteReg(0x0E, brightness);
+    }
+};
+
 class AtomS3rEchoBaseBoard : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
+    i2c_master_bus_handle_t i2c_bus_internal_;
     Pi4ioe* pi4ioe_;
+    Lp5562* lp5562_;
     Display* display_;
     Button boot_button_;
     void InitializeI2c() {
@@ -60,6 +81,11 @@ private:
             },
         };
         ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_cfg, &i2c_bus_));
+        
+        i2c_bus_cfg.i2c_port = I2C_NUM_0;
+        i2c_bus_cfg.sda_io_num = GPIO_NUM_45;
+        i2c_bus_cfg.scl_io_num = GPIO_NUM_0;
+        ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_cfg, &i2c_bus_internal_));
     }
 
     void I2cDetect() {
@@ -89,6 +115,12 @@ private:
         pi4ioe_->SetSpeakerMute(false);
     }
 
+    void InitializeLp5562() {
+        ESP_LOGI(TAG, "Init LP5562");
+        lp5562_ = new Lp5562(i2c_bus_internal_, 0x30);
+        lp5562_->SetLcdBacklight(255);
+    }
+
     void InitializeSpi() {
         spi_bus_config_t buscfg = {};
         buscfg.mosi_io_num = GPIO_NUM_21;
@@ -98,6 +130,11 @@ private:
         buscfg.quadhd_io_num = GPIO_NUM_NC;
         buscfg.max_transfer_sz = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(uint16_t);
         ESP_ERROR_CHECK(spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    }
+
+    void InitializeGc9107Display() {
+        ESP_LOGI(TAG, "Init GC9107 display");
+        display_ = new NoDisplay();
     }
 
     void InitializeButtons() {
@@ -121,8 +158,9 @@ public:
         InitializeI2c();
         I2cDetect();
         InitializePi4ioe();
-        // InitializeSpi();
-        display_ = new NoDisplay();
+        InitializeLp5562();
+        InitializeSpi();
+        InitializeGc9107Display();
         InitializeButtons();
         InitializeIot();
     }
