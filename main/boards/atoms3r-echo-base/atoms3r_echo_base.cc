@@ -17,12 +17,34 @@
 
 #define TAG "AtomS3R+EchoBase"
 
+#define PI4IOE_ADDR          0x43
+#define PI4IOE_REG_CTRL      0x00
+#define PI4IOE_REG_IO_PP     0x07
+#define PI4IOE_REG_IO_DIR    0x03
+#define PI4IOE_REG_IO_OUT    0x05
+#define PI4IOE_REG_IO_PULLUP 0x0D
+
+class Pi4ioe : public I2cDevice {
+public:
+    // Power Init
+    Pi4ioe(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
+        WriteReg(PI4IOE_REG_IO_PP, 0x00); // Set to high-impedance
+        WriteReg(PI4IOE_REG_IO_PULLUP, 0xFF); // Enable pull-up
+        WriteReg(PI4IOE_REG_IO_DIR, 0x6E); // Set input=0, output=1
+        WriteReg(PI4IOE_REG_IO_OUT, 0xFF); // Set outputs to 1
+    }
+
+    void SetSpeakerMute(bool mute) {
+        WriteReg(PI4IOE_REG_IO_OUT, mute ? 0x00 : 0xFF);
+    }
+};
+
 class AtomS3rEchoBaseBoard : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
+    Pi4ioe* pi4ioe_;
     Display* display_;
     Button boot_button_;
-
     void InitializeI2c() {
         // Initialize I2C peripheral
         i2c_master_bus_config_t i2c_bus_cfg = {
@@ -61,6 +83,12 @@ private:
         }
     }
 
+    void InitializePi4ioe() {
+        ESP_LOGI(TAG, "Init PI4IOE");
+        pi4ioe_ = new Pi4ioe(i2c_bus_, 0x43);
+        pi4ioe_->SetSpeakerMute(false);
+    }
+
     void InitializeSpi() {
         spi_bus_config_t buscfg = {};
         buscfg.mosi_io_num = GPIO_NUM_21;
@@ -92,7 +120,8 @@ public:
     AtomS3rEchoBaseBoard() : boot_button_(BOOT_BUTTON_GPIO) {
         InitializeI2c();
         I2cDetect();
-        InitializeSpi();
+        InitializePi4ioe();
+        // InitializeSpi();
         display_ = new NoDisplay();
         InitializeButtons();
         InitializeIot();
