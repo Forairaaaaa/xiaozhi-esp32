@@ -17,6 +17,10 @@
 
 #define TAG "Application"
 
+#ifdef CONFIG_BOARD_TYPE_ATOMS3_ECHO_BASE
+    #undef CONFIG_IDF_TARGET_ESP32S3
+#endif
+
 extern const char p3_err_reg_start[] asm("_binary_err_reg_p3_start");
 extern const char p3_err_reg_end[] asm("_binary_err_reg_p3_end");
 extern const char p3_err_pin_start[] asm("_binary_err_pin_p3_start");

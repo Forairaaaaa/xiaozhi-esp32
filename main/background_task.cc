@@ -4,6 +4,10 @@
 
 #define TAG "BackgroundTask"
 
+#ifdef CONFIG_BOARD_TYPE_ATOMS3_ECHO_BASE
+    #undef CONFIG_IDF_TARGET_ESP32S3
+#endif
+
 BackgroundTask::BackgroundTask(uint32_t stack_size) {
 #if CONFIG_IDF_TARGET_ESP32S3
     task_stack_ = (StackType_t*)heap_caps_malloc(stack_size, MALLOC_CAP_SPIRAM);
