@@ -32,6 +32,7 @@ jobs:
       - name: Run release build script
         run: |
           . $HOME/esp/esp-idf/export.sh
+          echo hi
           python scripts/burner_release.py all
 
       - name: Upload firmware artifacts
