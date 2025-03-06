@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout repository
@@ -17,27 +17,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "Python 3.8.10"
 
       - name: Install ESP-IDF
         run: |
           sudo apt update
           sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-          git clone --depth=1 --branch v5.3.2 --recursive https://github.com/espressif/esp-idf.git ~/esp-idf
-          echo "export IDF_PATH=~/esp-idf" >> $GITHUB_ENV
-          echo "export PATH=$HOME/.espressif/tools/xtensa-esp32s3-elf/bin:$PATH" >> $GITHUB_ENV
-          . ~/esp-idf/export.sh
+          mkdir -p ~/esp
+          cd ~/esp
+          git clone --depth=1 --branch v5.3.2 --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh esp32s3
 
-      - name: Install ESP-IDF dependencies
+      - name: Run release build script
         run: |
-          . ~/esp-idf/export.sh
-          pip install --upgrade pip
-          pip install -r ~/esp-idf/requirements.txt
-
-      - name: Run release script
-        run: |
-          . ~/esp-idf/export.sh
-          python scripts/release.py all  # 运行 release 脚本
+          . $HOME/esp/esp-idf/export.sh
+          python scripts/burner_release.py all
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
@@ -49,7 +44,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: releases/*.bin
-          draft: false
-          prerelease: false
+          draft: true
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
