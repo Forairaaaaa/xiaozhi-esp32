@@ -1,4 +1,4 @@
-name: Firmware Release
+name: Burner Firmware Release
 
 on:
   push:
