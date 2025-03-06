@@ -1,0 +1,49 @@
+{
+    "targets": [
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-NiHaoXiaoZhi",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_NIHAOXIAOZHI_TTS=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-HiLeXin",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_HILEXIN=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-HiM5",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_HIMFIVE=y"
+                    ]
+                }
+            ]
+        }
+    ]
+}
