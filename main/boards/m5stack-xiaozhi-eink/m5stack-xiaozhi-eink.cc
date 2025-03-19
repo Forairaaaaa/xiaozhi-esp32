@@ -18,10 +18,18 @@ private:
     i2c_master_bus_handle_t i2c_bus_;
     Button boot_button_;
 
+    void enableSpeaker() {
+        const gpio_num_t audio_en = GPIO_NUM_8;
+        gpio_reset_pin(audio_en);
+        gpio_set_direction(audio_en, GPIO_MODE_OUTPUT);
+        gpio_set_pull_mode(audio_en, GPIO_PULLUP_ONLY);
+        gpio_set_level(audio_en, 1);
+    }
+
     void InitializeI2c() {
         // Initialize I2C peripheral
         i2c_master_bus_config_t i2c_bus_cfg = {
-            .i2c_port = I2C_NUM_1,
+            .i2c_port = I2C_NUM_0,
             .sda_io_num = AUDIO_CODEC_I2C_SDA_PIN,
             .scl_io_num = AUDIO_CODEC_I2C_SCL_PIN,
             .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -33,11 +41,6 @@ private:
             },
         };
         ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_cfg, &i2c_bus_));
-
-        while (1) {
-            I2cDetect();
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }
     }
 
     void I2cDetect() {
@@ -79,6 +82,8 @@ private:
 
 public:
     M5StackXiaozhiEInkBoard() : boot_button_(BOOT_BUTTON_GPIO) {
+        enableSpeaker();
+        vTaskDelay(pdMS_TO_TICKS(100));
         InitializeI2c();
         I2cDetect();
         InitializeButtons();
@@ -88,7 +93,7 @@ public:
     virtual AudioCodec* GetAudioCodec() override {
         static Es8311AudioCodec audio_codec(
             i2c_bus_, 
-            I2C_NUM_1, 
+            I2C_NUM_0, 
             AUDIO_INPUT_SAMPLE_RATE, 
             AUDIO_OUTPUT_SAMPLE_RATE,
             AUDIO_I2S_GPIO_MCLK, 
