@@ -1,0 +1,215 @@
+{
+    "targets": [
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-NiHaoXiaoZhi",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_NIHAOXIAOZHI_TTS=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-NiHaoXiaoZhi-WebSocket",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_NIHAOXIAOZHI_TTS=y",
+                        "CONFIG_CONNECTION_TYPE_WEBSOCKET=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-HiLeXin",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_HILEXIN=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-HiM5",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_HIMFIVE=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-HiM5-EN-WebSocket",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_HIMFIVE=y",
+                        "CONFIG_LANGUAGE_EN_US=y",
+                        "CONFIG_CONNECTION_TYPE_WEBSOCKET=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_M5STACK_CORE_S3",
+            "board_type": "m5stack-core-s3",
+            "binName": "CoreS3-HiESP-EN-WebSocket",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "m5stack-core-s3",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM_MODE_QUAD=y",
+                        "CONFIG_SR_WN_WN9_HIESP=y",
+                        "CONFIG_LANGUAGE_EN_US=y",
+                        "CONFIG_CONNECTION_TYPE_WEBSOCKET=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3_ECHO_BASE",
+            "board_type": "atoms3-echo-base",
+            "binName": "AtomS3",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_SPIRAM=n",
+                        "CONFIG_USE_AFE=n",
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\""
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3R_ECHO_BASE",
+            "board_type": "atoms3r-echo-base",
+            "binName": "AtomS3R-NiHaoXiaoZhi",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3r-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\""
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3R_ECHO_BASE",
+            "board_type": "atoms3r-echo-base",
+            "binName": "AtomS3R-NiHaoXiaoZhi-WebSocket",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3r-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\"",
+                        "CONFIG_CONNECTION_TYPE_WEBSOCKET=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3R_ECHO_BASE",
+            "board_type": "atoms3r-echo-base",
+            "binName": "AtomS3R-HiLeXin",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3r-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\"",
+                        "CONFIG_SR_WN_WN9_HILEXIN=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3R_ECHO_BASE",
+            "board_type": "atoms3r-echo-base",
+            "binName": "AtomS3R-HiM5",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3r-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\"",
+                        "CONFIG_SR_WN_WN9_HIMFIVE=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3R_ECHO_BASE",
+            "board_type": "atoms3r-echo-base",
+            "binName": "AtomS3R-HiM5-EN-WebSocket",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3r-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\"",
+                        "CONFIG_SR_WN_WN9_HIMFIVE=y",
+                        "CONFIG_LANGUAGE_EN_US=y",
+                        "CONFIG_CONNECTION_TYPE_WEBSOCKET=y"
+                    ]
+                }
+            ]
+        },
+        {
+            "board_config": "CONFIG_BOARD_TYPE_ATOMS3R_ECHO_BASE",
+            "board_type": "atoms3r-echo-base",
+            "binName": "AtomS3R-HiESP-EN-WebSocket",
+            "target": "esp32s3",
+            "builds": [
+                {
+                    "name": "atoms3r-echo-base",
+                    "sdkconfig_append": [
+                        "CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y",
+                        "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_8M.csv\"",
+                        "CONFIG_SR_WN_WN9_HIESP=y",
+                        "CONFIG_LANGUAGE_EN_US=y",
+                        "CONFIG_CONNECTION_TYPE_WEBSOCKET=y"
+                    ]
+                }
+            ]
+        }
+    ]
+}
