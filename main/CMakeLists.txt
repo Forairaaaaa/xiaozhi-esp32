@@ -1,10 +1,7 @@
 file(GLOB_RECURSE STACK_CHAN_SRCS
-    "./stack_chan/hal/*.c"
-    "./stack_chan/hal/*.cc"
-    "./stack_chan/hal/*.cpp"
-    "./stack_chan/apps/*.c"
-    "./stack_chan/apps/*.cc"
-    "./stack_chan/apps/*.cpp"
+    "./stack_chan/*.c"
+    "./stack_chan/*.cc"
+    "./stack_chan/*.cpp"
 )
 set(STACK_CHAN_INCLUDE_DIRS 
     "./stack_chan"
@@ -49,7 +46,6 @@ set(SOURCES "audio/audio_codec.cc"
             "settings.cc"
             "device_state_event.cc"
             "assets.cc"
-            "stack_chan/main.cc"
             ${STACK_CHAN_SRCS}
             )
 

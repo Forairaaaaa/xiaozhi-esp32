@@ -4,3 +4,4 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+#include "app_dummy/app_dummy.h"
