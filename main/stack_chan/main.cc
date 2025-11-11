@@ -25,8 +25,8 @@ extern "C" void app_main(void)
     ui_hal::on_delay([](uint32_t ms) { GetHAL().delay(ms); });
     ui_hal::on_get_tick([]() { return GetHAL().millis(); });
 
-    //  // Install apps
-    //  GetMooncake().installApp(std::make_unique<Launcher>());
+    // Install apps
+    GetMooncake().installApp(std::make_unique<AppLauncher>());
     GetMooncake().installApp(std::make_unique<AppDummy>());
     GetMooncake().installApp(std::make_unique<AppDummy>());
     GetMooncake().installApp(std::make_unique<AppDummy>());
