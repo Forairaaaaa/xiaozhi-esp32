@@ -10,6 +10,9 @@
 #include "application.h"
 #include "system_info.h"
 
+#include <board.h>
+#include <display.h>
+
 #define TAG "main"
 
 extern "C" void app_main(void)
@@ -26,7 +29,17 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // Launch the application
+    auto& board = Board::GetInstance();
+
+    auto display = board.GetDisplay();
+    display->SetupXiaoZhiUI();
+
+    // // Launch the application
     auto& app = Application::GetInstance();
     app.Start();
+
+    // auto& board = Board::GetInstance();
+
+    // auto display = board.GetDisplay();
+    // display->SetupXiaoZhiUI();
 }
