@@ -108,3 +108,15 @@ void StackChanLcdDisplay::SetupXiaoZhiUI()
 {
     SetupUI();
 }
+
+void StackChanLcdDisplay::LvglLock()
+{
+    if (!Lock(30000)) {
+        ESP_LOGE("Display", "Failed to lock display");
+    }
+}
+
+void StackChanLcdDisplay::LvglUnlock()
+{
+    Unlock();
+}

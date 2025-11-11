@@ -43,8 +43,6 @@ public:
     inline int width() const { return width_; }
     inline int height() const { return height_; }
 
-    virtual void SetupXiaoZhiUI() {}
-
 protected:
     int width_ = 0;
     int height_ = 0;

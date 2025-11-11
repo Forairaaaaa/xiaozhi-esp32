@@ -1,3 +1,18 @@
+file(GLOB_RECURSE STACK_CHAN_SRCS
+    "./stack_chan/hal/*.c"
+    "./stack_chan/hal/*.cc"
+    "./stack_chan/hal/*.cpp"
+    "./stack_chan/apps/*.c"
+    "./stack_chan/apps/*.cc"
+    "./stack_chan/apps/*.cpp"
+)
+set(STACK_CHAN_INCLUDE_DIRS 
+    "./stack_chan"
+    "./stack_chan/assets"
+    "./stack_chan/hal"
+    "./stack_chan/apps"
+)
+
 # Define source files
 set(SOURCES "audio/audio_codec.cc"
             "audio/audio_service.cc"
@@ -34,10 +49,11 @@ set(SOURCES "audio/audio_codec.cc"
             "settings.cc"
             "device_state_event.cc"
             "assets.cc"
-            "main_stack_chan.cc"
+            "stack_chan/main.cc"
+            ${STACK_CHAN_SRCS}
             )
 
-set(INCLUDE_DIRS "." "display" "display/lvgl_display" "display/lvgl_display/jpg" "audio" "protocols")
+set(INCLUDE_DIRS "." "display" "display/lvgl_display" "display/lvgl_display/jpg" "audio" "protocols" ${STACK_CHAN_INCLUDE_DIRS})
 
 # Add board common files
 file(GLOB BOARD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/common/*.cc)
