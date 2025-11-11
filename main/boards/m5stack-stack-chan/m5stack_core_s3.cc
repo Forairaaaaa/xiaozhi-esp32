@@ -16,6 +16,7 @@
 #include <esp_lcd_ili9341.h>
 #include <esp_timer.h>
 #include "esp32_camera.h"
+#include "hal_bridge.h"
 
 #define TAG "M5Stack-StackChan-Board"
 
@@ -218,6 +219,11 @@ private:
 
         ft6336_->UpdateTouchPoint();
         auto& touch_point = ft6336_->GetTouchPoint();
+
+        if (!hal_bridge::is_xiaozhi_mode()) {
+            hal_bridge::set_touch_point(touch_point.num, touch_point.x, touch_point.y);
+            return;
+        }
 
         // 检测触摸开始
         if (touch_point.num > 0 && !was_touched) {

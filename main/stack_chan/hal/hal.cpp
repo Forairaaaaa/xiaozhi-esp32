@@ -24,6 +24,7 @@ void Hal::init()
     mclog::tagInfo(_tag, "init");
 
     xiaozhi_board_init();
+    lvgl_init();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -95,5 +96,56 @@ void Hal::lvglLock()
 void Hal::lvglUnlock()
 {
     auto display = static_cast<StackChanLcdDisplay*>(Board::GetInstance().GetDisplay());
+    display->LvglUnlock();
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    Lvgl                                    */
+/* -------------------------------------------------------------------------- */
+#include <board.h>
+#include <display.h>
+#include <boards/m5stack-stack-chan/stack_chan_display.h>
+#include <boards/m5stack-stack-chan/hal_bridge.h>
+
+static void lvgl_read_cb(lv_indev_t* indev, lv_indev_data_t* data)
+{
+    hal_bridge::lock();
+    auto bridge_data = hal_bridge::get_data();
+
+    if (bridge_data.isXiaozhiMode) {
+        hal_bridge::unlock();
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    // mclog::tagInfo(_tag, "touchpoint: {}, x: {}, y: {}", bridge_data.touchPoint.num, bridge_data.touchPoint.x,
+    //                bridge_data.touchPoint.y);
+
+    if (bridge_data.touchPoint.num == 0) {
+        data->state = LV_INDEV_STATE_RELEASED;
+    } else {
+        data->state   = LV_INDEV_STATE_PRESSED;
+        data->point.x = bridge_data.touchPoint.x;
+        data->point.y = bridge_data.touchPoint.y;
+    }
+
+    hal_bridge::unlock();
+}
+
+void Hal::lvgl_init()
+{
+    mclog::tagInfo(_tag, "lvgl init");
+
+    auto display = static_cast<StackChanLcdDisplay*>(Board::GetInstance().GetDisplay());
+
+    display->LvglLock();
+
+    mclog::tagInfo(_tag, "create lvgl touchpad indev");
+    lvTouchpad = lv_indev_create();
+    lv_indev_set_type(lvTouchpad, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(lvTouchpad, lvgl_read_cb);
+    lv_indev_set_group(lvTouchpad, lv_group_get_default());
+    lv_indev_set_display(lvTouchpad, display->GetLvglDisplay());
+
     display->LvglUnlock();
 }

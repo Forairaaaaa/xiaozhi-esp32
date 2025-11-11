@@ -7,6 +7,7 @@
 #include <memory>
 #include <cstdint>
 #include <string>
+#include <lvgl.h>
 
 class Hal {
 public:
@@ -18,11 +19,13 @@ public:
     void feedTheDog();
 
     /* --------------------------------- Display -------------------------------- */
+    lv_indev_t* lvTouchpad = nullptr;
     void lvglLock();
     void lvglUnlock();
 
 private:
     void xiaozhi_board_init();
+    void lvgl_init();
 };
 
 Hal& GetHAL();

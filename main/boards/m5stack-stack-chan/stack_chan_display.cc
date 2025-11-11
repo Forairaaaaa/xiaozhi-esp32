@@ -104,6 +104,11 @@ StackChanLcdDisplay::StackChanLcdDisplay(esp_lcd_panel_io_handle_t panel_io, esp
     // SetupUI();
 }
 
+lv_disp_t* StackChanLcdDisplay::GetLvglDisplay()
+{
+    return display_;
+}
+
 void StackChanLcdDisplay::SetupXiaoZhiUI()
 {
     SetupUI();
