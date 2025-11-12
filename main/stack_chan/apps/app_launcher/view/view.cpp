@@ -23,7 +23,7 @@ class DynamicBgColor {
 public:
     std::function<void(const uint32_t& bgColor)> onBgColorChanged;
 
-    void init(const std::vector<uint32_t>& stepColors, uint32_t stepGap)
+    void init(const std::vector<uint32_t>& stepColors, int stepGap)
     {
         _step_colors = stepColors;
         _step_gap    = stepGap;
@@ -79,19 +79,117 @@ private:
     std::vector<uint32_t> _step_colors;
     int _current_index = 0;
     int _last_index    = 0;
-    uint32_t _step_gap = 0;
+    int _step_gap      = 0;
     color::AnimateRgb_t _bg_color;
 };
 
-static std::string _tag             = "LauncherView";
+/* -------------------------------------------------------------------------- */
+/*                               Page indicator                               */
+/* -------------------------------------------------------------------------- */
+class PageIndicator {
+public:
+    const int dot_size     = 8;
+    const int dot_size_big = 14;
+    const int dot_gap      = 16;
+
+    void init(int pageNum, int pageGap, lv_obj_t* parent, int posX, int posY)
+    {
+        _page_num = pageNum;
+        _page_gap = pageGap;
+
+        _panel = std::make_unique<Container>(parent);
+        _panel->removeFlag(LV_OBJ_FLAG_SCROLLABLE);
+        _panel->addFlag(LV_OBJ_FLAG_FLOATING);
+        _panel->setAlign(LV_ALIGN_CENTER);
+        _panel->setPadding(0, 0, 24, 24);
+        _panel->setPos(posX, posY);
+        _panel->setBorderWidth(0);
+        _panel->setHeight(24);
+        _panel->setWidth((pageNum * dot_size) + (pageNum - 1) * (dot_gap - dot_size) + 24 * 2);
+        _panel->setBgOpa(0);
+
+        for (int i = 0; i < pageNum; i++) {
+            _dots.push_back(std::make_unique<Container>(_panel->get()));
+            _dots.back()->setAlign(LV_ALIGN_CENTER);
+            _dots.back()->setPos(i * dot_gap - (pageNum - 1) * dot_gap / 2, 0);
+            _dots.back()->setBgColor(lv_color_hex(0xFFFFFF));
+            _dots.back()->removeFlag(LV_OBJ_FLAG_SCROLLABLE);
+            _dots.back()->setRadius(LV_RADIUS_CIRCLE);
+            _dots.back()->setSize(dot_size, dot_size);
+            _dots.back()->setBorderWidth(0);
+        }
+
+        jumpTo(0);
+    }
+
+    void jumpTo(int index)
+    {
+        if (index < 0 || index >= _page_num) {
+            return;
+        }
+        _current_index = index;
+        _last_index    = index;
+        update_dots();
+    }
+
+    void update(int scrollValue)
+    {
+        _last_index = _current_index;
+
+        _current_index = (scrollValue + _page_gap / 2) / _page_gap;
+        if (_current_index < 0) {
+            _current_index = 0;
+        }
+        if (_current_index >= _page_num) {
+            _current_index = _page_num - 1;
+        }
+
+        if (_last_index != _current_index) {
+            update_dots();
+        }
+    }
+
+private:
+    int _page_num = 0;
+    int _page_gap = 0;
+
+    int _current_index = 0;
+    int _last_index    = 0;
+
+    std::unique_ptr<Container> _panel;
+    std::vector<std::unique_ptr<Container>> _dots;
+
+    void update_dots()
+    {
+        for (int i = 0; i < _page_num; i++) {
+            if (i == _current_index) {
+                _dots[i]->setSize(dot_size_big, dot_size_big);
+                _dots[i]->setOpa(255);
+            } else {
+                _dots[i]->setSize(dot_size, dot_size);
+                _dots[i]->setOpa(128);
+            }
+        }
+    }
+};
+
+static std::string _tag        = "LauncherView";
+static constexpr int _icon_gap = 320;
+
 static int _last_clicked_icon_pos_x = -1;
 static std::unique_ptr<DynamicBgColor> _dynamic_bg_color;
-static constexpr int _icon_gap = 320;
+static std::unique_ptr<PageIndicator> _page_indicator;
 
 LauncherView::~LauncherView()
 {
+    _icon_images.clear();
     _icon_panels.clear();
+    _icon_labels.clear();
+    _lr_indicators_images.clear();
+    _lr_indicator_panels.clear();
     _panel.reset();
+    _dynamic_bg_color.reset();
+    _page_indicator.reset();
 }
 
 void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
@@ -132,12 +230,12 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
         });
 
         // Icon label
-        _labels.push_back(std::make_unique<Label>(_panel->get()));
-        _labels.back()->setTextColor(lv_color_hex(0x000000));
-        _labels.back()->setTextFont(&MontserratSemiBold26);
-        _labels.back()->setAlign(LV_ALIGN_CENTER);
-        _labels.back()->setPos(icon_x, icon_y - 99);
-        _labels.back()->setText(props.info.name);
+        _icon_labels.push_back(std::make_unique<Label>(_panel->get()));
+        _icon_labels.back()->setTextColor(lv_color_hex(0x000000));
+        _icon_labels.back()->setTextFont(&MontserratSemiBold26);
+        _icon_labels.back()->setAlign(LV_ALIGN_CENTER);
+        _icon_labels.back()->setPos(icon_x, icon_y - 99);
+        _icon_labels.back()->setText(props.info.name);
 
         // Icon image
         if (props.info.icon != nullptr) {
@@ -214,12 +312,19 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
 
     _dynamic_bg_color->init(step_colors, _icon_gap);
 
+    /* ------------------------------ Page indicator ---------------------------- */
+    _page_indicator = std::make_unique<PageIndicator>();
+    _page_indicator->init(appPorps.size(), _icon_gap, _panel->get(), 0, 103);
+
     /* ----------------------------- History restore ---------------------------- */
     if (_last_clicked_icon_pos_x != -1) {
         // mclog::tagInfo(_tag, "navigate to last clicked icon, pos x: {}", _last_clicked_icon_pos_x);
         _panel->scrollBy(-_last_clicked_icon_pos_x, 0, LV_ANIM_OFF);
+
         _dynamic_bg_color->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
+        _page_indicator->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
         update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
+
         _last_clicked_icon_pos_x = -1;
     }
 }
@@ -235,8 +340,8 @@ void LauncherView::update()
 
     int scroll_x = _panel->getScrollX();
 
-    // Update bg color
     _dynamic_bg_color->update(scroll_x);
+    _page_indicator->update(scroll_x);
     update_lr_indicator_edge_fade(scroll_x);
 }
 
