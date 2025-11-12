@@ -59,6 +59,9 @@ void Hal::feedTheDog()
 #include <driver/gpio.h>
 #include <esp_event.h>
 #include <board.h>
+#include <boards/m5stack-stack-chan/stack_chan_display.h>
+#include <boards/m5stack-stack-chan/hal_bridge.h>
+#include <application.h>
 
 void Hal::xiaozhi_board_init()
 {
@@ -81,6 +84,21 @@ void Hal::xiaozhi_board_init()
 
     // test
     board.GetBacklight()->SetBrightness(100);
+}
+
+void Hal::startXiaozhi()
+{
+    mclog::tagInfo(_tag, "start xiaozhi");
+
+    auto display = static_cast<StackChanLcdDisplay*>(Board::GetInstance().GetDisplay());
+
+    display->SetupXiaoZhiUI();
+
+    hal_bridge::set_xiaozhi_mode(true);
+
+    // Launch the application
+    auto& app = Application::GetInstance();
+    app.Start();
 }
 
 /* -------------------------------------------------------------------------- */

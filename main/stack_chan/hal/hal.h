@@ -23,6 +23,9 @@ public:
     void lvglLock();
     void lvglUnlock();
 
+    /* --------------------------------- Xiaozhi -------------------------------- */
+    void startXiaozhi();
+
 private:
     void xiaozhi_board_init();
     void lvgl_init();
