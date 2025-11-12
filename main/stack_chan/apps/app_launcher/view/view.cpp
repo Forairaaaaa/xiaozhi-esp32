@@ -219,6 +219,7 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
         // mclog::tagInfo(_tag, "navigate to last clicked icon, pos x: {}", _last_clicked_icon_pos_x);
         _panel->scrollBy(-_last_clicked_icon_pos_x, 0, LV_ANIM_OFF);
         _dynamic_bg_color->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
+        update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
         _last_clicked_icon_pos_x = -1;
     }
 }
@@ -232,5 +233,23 @@ void LauncherView::update()
         _clicked_app_id = -1;
     }
 
-    _dynamic_bg_color->update(_panel->getScrollX());
+    int scroll_x = _panel->getScrollX();
+
+    // Update bg color
+    _dynamic_bg_color->update(scroll_x);
+    update_lr_indicator_edge_fade(scroll_x);
+}
+
+void LauncherView::update_lr_indicator_edge_fade(int scroll_x)
+{
+    if (scroll_x <= 0 + _icon_gap / 2) {
+        _lr_indicator_panels[0]->setOpa(100);
+    } else {
+        _lr_indicator_panels[0]->setOpa(255);
+    }
+    if (scroll_x >= _icon_gap * ((int)_icon_panels.size() - 1) - _icon_gap / 2) {
+        _lr_indicator_panels[1]->setOpa(100);
+    } else {
+        _lr_indicator_panels[1]->setOpa(255);
+    }
 }

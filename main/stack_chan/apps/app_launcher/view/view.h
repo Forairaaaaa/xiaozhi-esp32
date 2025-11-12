@@ -31,6 +31,8 @@ private:
     std::vector<std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Image>> _lr_indicators_images;
 
     int _clicked_app_id = -1;
+
+    void update_lr_indicator_edge_fade(int scroll_x);
 };
 
 }  // namespace view
