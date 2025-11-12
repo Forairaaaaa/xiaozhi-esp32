@@ -19,6 +19,9 @@ AppUiflow::AppUiflow()
     setAppInfo().name = "PROGRAM ME";
     // 配置 App 图标
     setAppInfo().icon = (void*)&icon_uiflow;
+    // 配置 App 主题颜色
+    static uint32_t theme_color = 0x00CCFF;
+    setAppInfo().userData       = (void*)&theme_color;
 }
 
 // App 被安装时会被调用

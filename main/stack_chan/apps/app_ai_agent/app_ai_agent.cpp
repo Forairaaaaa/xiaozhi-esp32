@@ -19,6 +19,9 @@ AppAiAgent::AppAiAgent()
     setAppInfo().name = "AI.AGENT";
     // 配置 App 图标
     setAppInfo().icon = (void*)&icon_ai_agent;
+    // 配置 App 主题颜色
+    static uint32_t theme_color = 0x33CC99;
+    setAppInfo().userData       = (void*)&theme_color;
 }
 
 // App 被安装时会被调用

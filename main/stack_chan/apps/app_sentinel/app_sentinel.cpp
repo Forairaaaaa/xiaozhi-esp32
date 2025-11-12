@@ -19,6 +19,9 @@ AppSentinel::AppSentinel()
     setAppInfo().name = "SENTINEL";
     // 配置 App 图标
     setAppInfo().icon = (void*)&icon_sentinel;
+    // 配置 App 主题颜色
+    static uint32_t theme_color = 0xFF6699;
+    setAppInfo().userData       = (void*)&theme_color;
 }
 
 // App 被安装时会被调用

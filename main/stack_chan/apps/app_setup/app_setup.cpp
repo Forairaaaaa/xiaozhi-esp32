@@ -19,6 +19,9 @@ AppSetup::AppSetup()
     setAppInfo().name = "SETUP";
     // 配置 App 图标
     setAppInfo().icon = (void*)&icon_setup;
+    // 配置 App 主题颜色
+    static uint32_t theme_color = 0xB3B3B3;
+    setAppInfo().userData       = (void*)&theme_color;
 }
 
 // App 被安装时会被调用
