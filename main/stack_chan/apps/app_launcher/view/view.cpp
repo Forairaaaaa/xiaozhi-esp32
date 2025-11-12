@@ -236,6 +236,7 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
         _icon_labels.back()->setAlign(LV_ALIGN_CENTER);
         _icon_labels.back()->setPos(icon_x, icon_y - 99);
         _icon_labels.back()->setText(props.info.name);
+        _icon_labels.back()->setOpa(233);
 
         // Icon image
         if (props.info.icon != nullptr) {
