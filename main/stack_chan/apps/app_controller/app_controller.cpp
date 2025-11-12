@@ -3,39 +3,36 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#include "app_dummy.h"
+#include "app_controller.h"
 #include <hal/hal.h>
 #include <mooncake.h>
 #include <mooncake_log.h>
-#include <smooth_ui_toolkit.h>
 #include <assets/assets.h>
 #include <smooth_lvgl.h>
-#include <cstdint>
 
 using namespace mooncake;
 using namespace smooth_ui_toolkit::lvgl_cpp;
 
-AppDummy::AppDummy()
+AppController::AppController()
 {
-    static int count = 0;
-    count++;
     // 配置 App 名
-    setAppInfo().name = fmt::format("AppDummy{}", count);
+    setAppInfo().name = "DUMMY";
     // 配置 App 图标
-    setAppInfo().icon = (void*)&icon_app_dummy;
+    setAppInfo().icon = (void*)&icon_controller;
 }
 
 // App 被安装时会被调用
-void AppDummy::onCreate()
+void AppController::onCreate()
 {
     mclog::tagInfo(getAppInfo().name, "on create");
 }
 
 static std::unique_ptr<Button> _button_quit;
+static uint32_t _time_count = 0;
 
 // App 被打开时会被调用
 // 可以在这里构造 UI，初始化操作等
-void AppDummy::onOpen()
+void AppController::onOpen()
 {
     mclog::tagInfo(getAppInfo().name, "on open");
 
@@ -57,7 +54,7 @@ void AppDummy::onOpen()
 }
 
 // App 运行时会一直被调用，不建议在这里阻塞操作
-void AppDummy::onRunning()
+void AppController::onRunning()
 {
     // mclog::tagInfo(getAppInfo().name, "on running");
 
@@ -70,7 +67,7 @@ void AppDummy::onRunning()
 
 // App 被关闭时会被调用
 // 可以在这里销毁 UI，释放资源等
-void AppDummy::onClose()
+void AppController::onClose()
 {
     mclog::tagInfo(getAppInfo().name, "on close");
 

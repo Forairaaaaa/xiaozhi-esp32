@@ -78,6 +78,9 @@ void Hal::xiaozhi_board_init()
 
     // Init board
     auto& board = Board::GetInstance();
+
+    // test
+    board.GetBacklight()->SetBrightness(100);
 }
 
 /* -------------------------------------------------------------------------- */

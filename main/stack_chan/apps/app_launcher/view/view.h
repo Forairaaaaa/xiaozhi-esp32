@@ -24,9 +24,10 @@ public:
 
 private:
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Container> _panel;
-    std::vector<std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Container>> _icons;
+    std::vector<std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Container>> _icon_panels;
     std::vector<std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Image>> _icon_images;
     std::vector<std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label>> _labels;
+    std::vector<std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Image>> _lr_indicators;
 
     int _clicked_app_id = -1;
 };
