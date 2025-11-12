@@ -324,10 +324,11 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
 
         _dynamic_bg_color->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
         _page_indicator->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
-        update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
 
         _last_clicked_icon_pos_x = -1;
     }
+
+    update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
 }
 
 void LauncherView::update()
