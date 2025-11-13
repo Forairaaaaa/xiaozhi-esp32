@@ -196,6 +196,10 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
 {
     mclog::tagInfo(_tag, "init");
 
+    /* ------------------------------ Screen setup ------------------------------ */
+    ScreenActive screen;
+    screen.removeFlag(LV_OBJ_FLAG_SCROLLABLE);
+
     /* ---------------------------------- Panel --------------------------------- */
     _panel = std::make_unique<Container>(lv_screen_active());
     _panel->setAlign(LV_ALIGN_CENTER);
@@ -327,12 +331,60 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
         update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
 
         _last_clicked_icon_pos_x = -1;
-    } else {
+        _state                   = STATE_NORMAL;
+    }
+
+    // If first create
+    else {
         update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
+
+        // Setup startup animation
+        // x for pos_y, y for radius
+        _startup_anim = std::make_unique<AnimateVector2>();
+
+        _startup_anim->x.springOptions().damping        = 12.0;
+        _startup_anim->y.delay                          = 0.15;
+        _startup_anim->y.springOptions().visualDuration = 0.4;
+        _startup_anim->y.springOptions().bounce         = 0.05;
+
+        _startup_anim->teleport(240, 120);
+        _panel->setY(_startup_anim->directValue().x);
+        _panel->setRadius(_startup_anim->directValue().y);
+
+        _startup_anim->move(0, 0);
+
+        _state = STATE_STARTUP;
     }
 }
 
 void LauncherView::update()
+{
+    switch (_state) {
+        case STATE_STARTUP:
+            handle_state_startup();
+            break;
+        case STATE_NORMAL:
+            handle_state_normal();
+            break;
+        default:
+            break;
+    }
+}
+
+void LauncherView::handle_state_startup()
+{
+    _startup_anim->update();
+
+    _panel->setY(_startup_anim->directValue().x);
+    _panel->setRadius(_startup_anim->directValue().y);
+
+    if (_startup_anim->done()) {
+        _startup_anim.reset();
+        _state = STATE_NORMAL;
+    }
+}
+
+void LauncherView::handle_state_normal()
 {
     if (_clicked_app_id != -1) {
         if (onAppClicked) {

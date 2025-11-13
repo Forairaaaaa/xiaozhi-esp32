@@ -16,7 +16,7 @@ using namespace smooth_ui_toolkit::lvgl_cpp;
 AppController::AppController()
 {
     // 配置 App 名
-    setAppInfo().name = "DUMMY";
+    setAppInfo().name = "AVATAR";
     // 配置 App 图标
     setAppInfo().icon = (void*)&icon_controller;
     // 配置 App 主题颜色
