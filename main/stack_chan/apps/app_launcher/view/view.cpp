@@ -359,18 +359,23 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
     }
 
     /* ------------------------------ LR indicators ----------------------------- */
-    // Scroll to nearby icon handler
+    // Scroll to nearby icon handler with wrap-around
     int total_icons            = appPorps.size();
     auto scroll_to_nearby_icon = [&, total_icons](int direction) {
         auto current_scroll_x = _panel->getScrollX();
         int current_index     = (current_scroll_x + _icon_gap / 2) / _icon_gap;
         int target_index      = current_index + direction;
 
-        if (target_index >= 0 && target_index < total_icons) {
-            int target_x        = target_index * _icon_gap;
-            int scroll_distance = target_x - current_scroll_x;
-            _panel->scrollBy(-scroll_distance, 0, LV_ANIM_ON);
+        // Wrap around at boundaries
+        if (target_index < 0) {
+            target_index = total_icons - 1;
+        } else if (target_index >= total_icons) {
+            target_index = 0;
         }
+
+        int target_x        = target_index * _icon_gap;
+        int scroll_distance = target_x - current_scroll_x;
+        _panel->scrollBy(-scroll_distance, 0, LV_ANIM_ON);
     };
 
     // Go left indicator
@@ -439,7 +444,6 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
         _dynamic_bg_color->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
         _page_indicator->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
         _dynamic_icon_label->jumpTo(_last_clicked_icon_pos_x / _icon_gap);
-        update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
 
         _last_clicked_icon_pos_x = -1;
         _state                   = STATE_NORMAL;
@@ -447,8 +451,6 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
 
     // If first create
     else {
-        update_lr_indicator_edge_fade(_last_clicked_icon_pos_x);
-
         // Setup startup animation
         // x for pos_y, y for radius
         _startup_anim = std::make_unique<AnimateVector2>();
@@ -510,19 +512,4 @@ void LauncherView::handle_state_normal()
     _dynamic_bg_color->update(scroll_x);
     _page_indicator->update(scroll_x);
     _dynamic_icon_label->update(scroll_x);
-    update_lr_indicator_edge_fade(scroll_x);
-}
-
-void LauncherView::update_lr_indicator_edge_fade(int scroll_x)
-{
-    if (scroll_x <= 0 + _icon_gap / 2) {
-        _lr_indicator_panels[0]->setOpa(100);
-    } else {
-        _lr_indicator_panels[0]->setOpa(255);
-    }
-    if (scroll_x >= _icon_gap * ((int)_icon_panels.size() - 1) - _icon_gap / 2) {
-        _lr_indicator_panels[1]->setOpa(100);
-    } else {
-        _lr_indicator_panels[1]->setOpa(255);
-    }
 }

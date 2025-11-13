@@ -10,7 +10,6 @@
 #include <functional>
 #include <vector>
 #include <memory>
-#include "animation/animate_value/animate_value.h"
 
 namespace view {
 
@@ -42,7 +41,6 @@ private:
 
     void handle_state_startup();
     void handle_state_normal();
-    void update_lr_indicator_edge_fade(int scroll_x);
 };
 
 }  // namespace view
